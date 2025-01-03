@@ -1,25 +1,2 @@
-runtime: python310  # Usar la versión de Python adecuada
-
-env_variables:
-  # Si tienes variables de entorno, agrégalas aquí
-  VAR_NAME: "value"
-
-entrypoint: gunicorn -b :$PORT app:app  # Asumiendo que tu app Flask o FastAPI está en app.py
-
-instance_class: F2  # O ajusta la clase de instancia según tus necesidades
-
-env: standard  # Usando el entorno estándar de App Engine
-
-automatic_scaling:
-  min_instances: 1  # Mínimo de instancias
-  max_instances: 5  # Número máximo de instancias
-
-handlers:
-- url: /static
-  static_dir: static  # Servir archivos estáticos desde el directorio 'static'
-
-- url: /templates
-  static_dir: templates  # Servir plantillas (aunque generalmente las plantillas son procesadas por tu aplicación, no estático)
-
-- url: /.*
-  script: auto  # Redirige todas las solicitudes a tu archivo app.py
+runtime: python310  # Usa la versión de Python que prefieras
+entrypoint: gunicorn -b :$PORT app:app  # Esto asume que tu app está en `app.py`

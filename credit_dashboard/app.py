@@ -1,12 +1,13 @@
 from flask import Flask, render_template, request, jsonify
 import requests
 import json
+import os
 
-# Inicializar la app de Flask
+# Inicializa la app de Flask
 app = Flask(__name__)
 
-endpoint_url = dbutils.secrets.get(scope = "machine_learning_v2", key = "end_point")
-api_token = dbutils.secrets.get(scope = "machine_learning_v2", key = "api_token")
+endpoint_url = os.getenv("end_point")
+api_token =os.getenv("api_token")
 
 # Ruta para la página principal
 @app.route('/')
