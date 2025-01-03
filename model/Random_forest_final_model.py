@@ -55,32 +55,32 @@ assembler = VectorAssembler(inputCols=feature_columns, outputCol="unscaled_featu
 scaler = StandardScaler(inputCol="unscaled_features", outputCol="scaled_features", withStd=True, withMean=True)
 
 # Modelo de Random Forest
-#model = RandomForestClassifier(
-#    labelCol="label",
-#    featuresCol="scaled_features",
-#    numTrees=300,
-#    bootstrap=True,
-#    cacheNodeIds=False,
-#    checkpointInterval=10,
-#    featureSubsetStrategy='auto',
-#    impurity='gini',
-#    maxBins=32,
-#    maxDepth=15,
-#    maxMemoryInMB=256,
-#    minInfoGain=0.0,
-#    minInstancesPerNode=1,
-#    minWeightFractionPerNode=0.0,
-#    predictionCol="prediction",
-#    probabilityCol="probability",
-#    rawPredictionCol="rawPrediction",
-#    seed=-7387420455837441889,
-#    subsamplingRate=1.0
-#)
 model = RandomForestClassifier(
     labelCol="label",
     featuresCol="scaled_features",
-    numTrees=50
+    numTrees=300,
+    bootstrap=True,
+    cacheNodeIds=False,
+    checkpointInterval=10,
+    featureSubsetStrategy='auto',
+    impurity='gini',
+    maxBins=32,
+    maxDepth=15,
+    maxMemoryInMB=256,
+    minInfoGain=0.0,
+    minInstancesPerNode=1,
+    minWeightFractionPerNode=0.0,
+    predictionCol="prediction",
+    probabilityCol="probability",
+    rawPredictionCol="rawPrediction",
+    seed=-7387420455837441889,
+    subsamplingRate=1.0
 )
+#model = RandomForestClassifier(
+#    labelCol="label",
+#    featuresCol="scaled_features",
+#    numTrees=50
+#)
 
 # Pipeline: preprocesamiento + modelo
 pipeline = Pipeline(stages=[indexer, assembler, scaler, model])
@@ -115,11 +115,12 @@ with mlflow.start_run(run_name='tuned_random_forest'):
 
     conda_env = _mlflow_conda_env(
         additional_conda_deps=[
-            "python=3.12.3"   # Asegúrate de que se instale la versión de Python adecuada
+            "python=3.12.3",   # Asegúrate de que se instale la versión de Python adecuada
         ],  
         additional_pip_deps=[
             "mlflow==2.15.1",  # Dependencia de MLflow
-            "cloudpickle=={}".format(cloudpickle.__version__)  # Dependencia de Cloudpickle
+            "cloudpickle=={}".format(cloudpickle.__version__),  # Dependencia de Cloudpickle
+            "pyspark",  # Agregar pyspark aquí
         ],
         additional_conda_channels=["conda-forge"]  # Asegúrate de que se use el canal condaforge
     )
@@ -158,12 +159,7 @@ client.set_registered_model_alias(model_name, "Champion", model_version.version)
 # COMMAND ----------
 
 model = mlflow.spark.load_model(f"models:/{model_name}@Champion")
-
-
-# Realizamos las predicciones en el conjunto de test
 predictions = model.transform(test_df)
-
-# Evaluar el AUC usando BinaryClassificationEvaluator
 evaluator = BinaryClassificationEvaluator(labelCol="label", rawPredictionCol="rawPrediction", metricName="areaUnderROC")
 auc = evaluator.evaluate(predictions)
 
@@ -180,19 +176,46 @@ print(f'AUC: {auc}')
 from mlflow.deployments import get_deploy_client
 
 client = get_deploy_client("databricks")
+#endpoint = client.create_endpoint(
+#    name="random_forest_model_endpoint",
+#    config={
+#        "served_entities": [
+#            {
+#                "name": "random_forest_entity",
+#                "entity_name": model_name,
+#                "entity_version": model_version.version,
+#                "workload_size": "Small",
+#                "scale_to_zero_enabled": True
+#            }
+#        ],
+#      }
+#)
+
 endpoint = client.create_endpoint(
-    name="random_forest_model_endpoint_v3",
+    name="random_forest_model_endpoint",
     config={
         "served_entities": [
             {
                 "name": "random_forest_entity",
                 "entity_name": model_name,
                 "entity_version": model_version.version,
-                "workload_size": "Small",
-                "scale_to_zero_enabled": True
+                "workload_size": "Large",  # Usar el tamaño grande
+                "scale_to_zero_enabled": False,  # Asegurarse de que no se escale a cero
+                "autoscaling_enabled": True,  # Habilitar escalado automático
+                "min_instances": 1,  # Número mínimo de instancias
+                "max_instances": 4,  # Número máximo de instancias
+                "gpu": {
+                    "type": "A100",  # Especificar el tipo de GPU A100
+                    "count": 4  # Utilizar 4 GPUs A100
+                },
+                "concurrency": {
+                    "level": "Small",  # Concurrencia pequeña
+                    "min": 0,  # Concurrencia mínima
+                    "max": 4  # Concurrencia máxima (puedes ajustar este rango)
+                }
             }
         ],
-      }
+    }
 )
 
 # COMMAND ----------
