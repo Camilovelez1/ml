@@ -6,6 +6,10 @@
 
 from pyspark.sql.functions import input_file_name
 from pyspark.sql.types import StructType, StructField, IntegerType, DoubleType, StringType, DateType
+from pyspark.sql.functions import monotonically_increasing_id
+from pyspark.sql.functions import year, month, dayofmonth
+import matplotlib.pyplot as plt
+from pyspark.sql.functions import col
 
 # COMMAND ----------
 
@@ -49,11 +53,6 @@ df.groupBy("payment_on_time").count().show()
 
 # COMMAND ----------
 
-from pyspark.sql.functions import monotonically_increasing_id
-from pyspark.sql.functions import year, month, dayofmonth
-
-# COMMAND ----------
-
 df = df.withColumn("fecha_corte_year", year("fecha_corte"))
 df = df.withColumn("fecha_corte_month", month("fecha_corte"))
 df = df.withColumn("fecha_corte_day", dayofmonth("fecha_corte"))
@@ -62,6 +61,30 @@ df = df.withColumn("fecha_pago_year", year("fecha_pago"))
 df = df.withColumn("fecha_pago_month", month("fecha_pago"))
 df = df.withColumn("fecha_pago_day", dayofmonth("fecha_pago"))
 
+
+# COMMAND ----------
+
+distinct_df = df.select([col(c).isNull().alias(c) for c in df.columns]).distinct()
+display(distinct_df)
+
+# COMMAND ----------
+
+
+
+# COMMAND ----------
+
+dims = (4, 4)
+
+f, axes = plt.subplots(dims[0], dims[1], figsize=(25, 15))
+axis_i, axis_j = 0, 0
+for col in df.columns:
+  if col == 'is_red' or col == 'quality':
+    continue # Box plots cannot be used on indicator variables
+  sns.boxplot(x=payment_on_time, y=df[col], ax=axes[axis_i, axis_j])
+  axis_j += 1
+  if axis_j == dims[1]:
+    axis_i += 1
+    axis_j = 0
 
 # COMMAND ----------
 

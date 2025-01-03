@@ -6,8 +6,8 @@
 
 from pyspark.ml.feature import StringIndexer, VectorAssembler, StandardScaler
 from pyspark.ml.classification import RandomForestClassifier, LogisticRegression
-from pyspark.ml.evaluation import BinaryClassificationEvaluator
-from pyspark.ml.evaluation import MulticlassClassificationEvaluator
+from pyspark.ml.evaluation import BinaryClassificationEvaluator, MulticlassClassificationEvaluator
+
 from pyspark.mllib.evaluation import MulticlassMetrics
 from pyspark.ml.tuning import ParamGridBuilder, CrossValidator
 
