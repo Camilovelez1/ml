@@ -6,6 +6,7 @@ import json
 app = Flask(__name__)
 
 endpoint_url = dbutils.secrets.get(scope = "machine_learning_v2", key = "end_point")
+api_token = dbutils.secrets.get(scope = "machine_learning_v2", key = "api_token")
 
 # Ruta para la página principal
 @app.route('/')
