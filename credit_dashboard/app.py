@@ -1,13 +1,18 @@
+from dotenv import load_dotenv
 from flask import Flask, render_template, request, jsonify
 import requests
 import json
 import os
+
+load_dotenv()
 
 # Inicializa la app de Flask
 app = Flask(__name__)
 
 endpoint_url = os.getenv("end_point")
 api_token =os.getenv("api_token")
+
+print(endpoint_url)
 
 # Ruta para la página principal
 @app.route('/')
@@ -35,35 +40,61 @@ def get_prediction():
 
     # Datos para enviar al modelo
     data = {
-        "columns": ["monthly_income", "age", "employment_years", "loan_amount", "credit_score", 
-                    "fecha_corte_year", "fecha_corte_month", "fecha_corte_day", 
-                    "fecha_pago_year", "fecha_pago_month", "fecha_pago_day"],
-        "data": [
-            [monthly_income, age, employment_years, loan_amount, credit_score, 
-             fecha_corte_year, fecha_corte_month, fecha_corte_day, 
-             fecha_pago_year, fecha_pago_month, fecha_pago_day]
+        "instances": [
+            {
+                "monthly_income": float(monthly_income),
+                "age": int(age),
+                "employment_years": int(employment_years),
+                "loan_amount": float(loan_amount),
+                "credit_score": int(credit_score),
+                "fecha_corte_year": int(fecha_corte_year),
+                "fecha_corte_month": int(fecha_corte_month),
+                "fecha_corte_day": int(fecha_corte_day),
+                "fecha_pago_year": int(fecha_pago_year),
+                "fecha_pago_month": int(fecha_pago_month),
+                "fecha_pago_day": int(fecha_pago_day)
+            }
         ]
     }
 
+
     # Encabezados para la autenticación y el tipo de contenido
     headers = {
-        "Authorization": api_token,
+        "Authorization": f"Bearer {api_token}",
         "Content-Type": "application/json"
     }
 
-    # Realizar la solicitud POST al endpoint
-    response = requests.post(endpoint_url, headers=headers, data=json.dumps(data))
+    #print("Datos a enviar:", json.dumps(data, indent=4))
+
+    try:
+        response = requests.post(endpoint_url, headers=headers, data=json.dumps(data))
+        response.raise_for_status()  # Lanza una excepción para respuestas con códigos 4xx/5xx
+    except requests.exceptions.HTTPError as errh:
+        return jsonify({"error": f"Error HTTP: {errh}"}), 400
+    except requests.exceptions.RequestException as err:
+        return jsonify({"error": f"Error en la solicitud: {err}"}), 500
 
     # Verificar si la solicitud fue exitosa
     if response.status_code == 200:
         result = response.json()
         prediccion = result.get("predictions", [])
         if prediccion:
-            return jsonify({"prediction": prediccion[0]})
+            # Interpretación basada en el valor 0 o 1
+            prediction_value = prediccion[0]  # 0 o 1
+            if prediction_value == 1:
+                prediction_interpretation = "El pago se realizará a tiempo."
+            else:
+                prediction_interpretation = "El pago no se realizará a tiempo."
+            
+            # Devuelve tanto la predicción como su interpretación
+            return jsonify({
+                "prediction": prediction_value,
+                "interpretation": prediction_interpretation
+            })
         else:
-            return jsonify({"error": "No se pudo obtener la predicción."})
+            return jsonify({"error": "No se pudo obtener la predicción."}), 500
     else:
-        return jsonify({"error": "Error en la solicitud al modelo. Código: " + str(response.status_code)})
+        return jsonify({"error": f"Error en la solicitud al modelo. Código: {response.status_code}"}), response.status_code
 
 if __name__ == '__main__':
     app.run(debug=True)
