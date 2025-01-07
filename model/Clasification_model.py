@@ -4,6 +4,11 @@
 
 # COMMAND ----------
 
+endpoint_url = os.getenv("end_point")
+api_token =os.getenv("api_token")
+
+# COMMAND ----------
+
 from pyspark.ml.feature import StringIndexer, VectorAssembler, StandardScaler
 from pyspark.ml.classification import RandomForestClassifier, LogisticRegression
 from pyspark.ml.evaluation import BinaryClassificationEvaluator, MulticlassClassificationEvaluator

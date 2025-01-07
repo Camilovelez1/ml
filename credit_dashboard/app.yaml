@@ -5,7 +5,10 @@ command:
   - 4
 env:
   - name: "end_point"
-    value: "secret-2"
+    valueFrom: "secret-2"
 
   - name: "api_token"
-    value: "secret"
+    valueFrom: "secret"
+
+  - name: "random_forest_model_endpoint_dummy"
+    valueFrom: "serving_endpoint"
