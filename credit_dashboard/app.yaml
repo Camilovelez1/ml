@@ -1,2 +1,11 @@
-runtime: python310  # Usa la versión de Python que prefieras
-entrypoint: gunicorn -b :$PORT app:app  # Esto asume que tu app está en `app.py`
+command:
+  - gunicorn
+  - app:app
+  - -w
+  - 4
+env:
+  - name: "end_point"
+    value: "secret-2"
+
+  - name: "api_token"
+    value: "secret"

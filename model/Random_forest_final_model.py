@@ -20,42 +20,6 @@ from mlflow.models.signature import infer_signature
 
 # COMMAND ----------
 
-import hashlib
-
-# Función para calcular el hash de un archivo
-def calculate_hash(file_path):
-    hash_sha256 = hashlib.sha256()
-    with open(file_path, "rb") as file:
-        while chunk := file.read(8192):  # Leer el archivo en bloques de 8 KB
-            hash_sha256.update(chunk)
-    return hash_sha256.hexdigest()
-
-# Listar todos los directorios en /tmp/mlflow/
-files_mlflow = dbutils.fs.ls("dbfs:/tmp/mlflow/")
-
-# Verificar y mostrar si hay directorios
-print(f"Found {len(files_mlflow)} files or directories in /tmp/mlflow/")
-
-# Procesar cada archivo o directorio
-for file in files_mlflow:
-    print(f"Processing: {file.path}")
-    if file.isDir():  # Solo procesar si es un directorio
-        files_in_directory = dbutils.fs.ls(file.path)  # Listar archivos en el directorio
-        print(f"Found {len(files_in_directory)} items in directory: {file.path}")
-        
-        for file_in_dir in files_in_directory:
-            if not file_in_dir.isDir():  # Verificar que sea un archivo y no un directorio
-                local_path = "/dbfs" + file_in_dir.path[5:]  # Asegúrate de quitar 'dbfs:' de la ruta
-                file_hash = calculate_hash(local_path)  # Calcular el hash del archivo
-                print(f"File: {file_in_dir.name} Hash: {file_hash}")
-            else:
-                print(f"Skipping directory: {file_in_dir.path}")
-    else:
-        print(f"Skipping non-directory: {file.path}")
-
-
-# COMMAND ----------
-
 # MAGIC %md
 # MAGIC # Read data
 
