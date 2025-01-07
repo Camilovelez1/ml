@@ -67,7 +67,7 @@ def get_prediction():
     #print("Datos a enviar:", json.dumps(data, indent=4))
 
     try:
-        response = requests.post(endpoint_url, headers=headers, data=json.dumps(data))
+        response = requests.post(endpoint_url, headers=headers, json=data)
         response.raise_for_status()  # Lanza una excepción para respuestas con códigos 4xx/5xx
     except requests.exceptions.HTTPError as errh:
         return jsonify({"error": f"Error HTTP: {errh}"}), 400
@@ -97,4 +97,4 @@ def get_prediction():
         return jsonify({"error": f"Error en la solicitud al modelo. Código: {response.status_code}"}), response.status_code
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=False)
